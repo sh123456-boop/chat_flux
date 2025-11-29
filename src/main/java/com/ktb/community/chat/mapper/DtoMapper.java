@@ -3,13 +3,13 @@ package com.ktb.community.chat.mapper;
 import com.ktb.community.chat.dto.ChatMessageDto;
 import com.ktb.community.chat.dto.ChatMessagePubSubDto;
 import com.ktb.community.chat.dto.ChatMessageReqDto;
-import com.ktb.community.entity.User;
 import com.ktb.community.exception.BusinessException;
 import com.ktb.community.exception.ErrorCode;
 import com.ktb.community.repository.UserRepository;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
-import java.time.Instant;
+import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 @Component
 public class DtoMapper {
@@ -19,30 +19,18 @@ public class DtoMapper {
         this.userRepository = userRepository;
     }
 
-    public ChatMessageDto toDto(ChatMessageReqDto chatMessageReqDto) {
-        User user = userRepository.findById(chatMessageReqDto.getSenderId()).orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+    public Mono<ChatMessagePubSubDto> toPubSubDto(ChatMessageReqDto chatMessageReqDto) {
 
-        ChatMessageDto chatMessageDto = ChatMessageDto.builder()
-                .message(chatMessageReqDto.getMessage())
-                .roomId(chatMessageReqDto.getRoomId())
-                .senderId(chatMessageReqDto.getSenderId())
-                .createdAt(Instant.now())
-                .nickName(user.getNickname())
-                .build();
-        return chatMessageDto;
-    }
+        return Mono.fromCallable(() -> userRepository.findById(chatMessageReqDto.getSenderId())
+                        .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND)))
+                .subscribeOn(boundedElastic())
+                .map(user -> ChatMessagePubSubDto.builder()
+                        .message(chatMessageReqDto.getMessage())
+                        .roomId(chatMessageReqDto.getRoomId())
+                        .senderId(chatMessageReqDto.getSenderId())
+                        .nickName(user.getNickname())
+                        .build());
 
-    public ChatMessagePubSubDto toPubSubDto(ChatMessageReqDto chatMessageReqDto) {
-
-        User user = userRepository.findById(chatMessageReqDto.getSenderId()).orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-
-        ChatMessagePubSubDto chatMessagePubSubDto = ChatMessagePubSubDto.builder()
-                .message(chatMessageReqDto.getMessage())
-                .roomId(chatMessageReqDto.getRoomId())
-                .senderId(chatMessageReqDto.getSenderId())
-                .nickName(user.getNickname())
-                .build();
-        return chatMessagePubSubDto;
 
     }
 }

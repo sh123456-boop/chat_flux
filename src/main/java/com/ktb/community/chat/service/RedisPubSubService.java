@@ -1,11 +1,10 @@
 package com.ktb.community.chat.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktb.community.chat.dto.ChatMessageDto;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -13,12 +12,13 @@ import reactor.core.publisher.Mono;
 public class RedisPubSubService {
 
     private final ReactiveStringRedisTemplate stringRedisTemplate;
-    private final SimpMessageSendingOperations messageTemplate;
+    private final SessionRegistry sessionRegistry;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public RedisPubSubService(@Qualifier("chatPubSub") ReactiveStringRedisTemplate stringRedisTemplate,
-                              SimpMessageSendingOperations messageTemplate) {
+                              SessionRegistry sessionRegistry) {
         this.stringRedisTemplate = stringRedisTemplate;
-        this.messageTemplate = messageTemplate;
+        this.sessionRegistry = sessionRegistry;
     }
 
     public Mono<Long> publish(String channel, String message) {
@@ -27,12 +27,14 @@ public class RedisPubSubService {
 
     public Mono<Void> handleMessage(String payload) {
         return Mono.fromRunnable(() -> {
-            ObjectMapper objectMapper = new ObjectMapper();
             try {
-                ChatMessageDto chatMessageDto = objectMapper.readValue(payload, ChatMessageDto.class);
-                messageTemplate.convertAndSend("/v1/chat/topic/" + chatMessageDto.getRoomId(), chatMessageDto);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                JsonNode node = objectMapper.readTree(payload);
+                Long roomId = node.path("roomId").isNumber() ? node.path("roomId").asLong() : null;
+                if (roomId != null) {
+                    sessionRegistry.broadcast(roomId, payload);
+                }
+            } catch (Exception e) {
+                // ignore malformed payload to avoid crashing listener
             }
         });
     }
