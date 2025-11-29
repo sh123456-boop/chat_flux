@@ -1,22 +1,22 @@
 package com.ktb.community.util;
 
+import com.ktb.community.entity.CustomUserDetails;
 import com.ktb.community.entity.Role;
 import com.ktb.community.entity.User;
-import com.ktb.community.service.CustomUserDetails;
 import io.jsonwebtoken.ExpiredJwtException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 
-public class JWTFilter extends OncePerRequestFilter {
+public class JWTFilter implements WebFilter {
 
     private final JWTUtil jwtUtil;
 
@@ -25,45 +25,30 @@ public class JWTFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
         // 헤더에서 access키에 담긴 토큰을 꺼냄
-        String accessToken = request.getHeader("access");
+        String accessToken = exchange.getRequest().getHeaders().getFirst("access");
 
         // 토큰이 없다면 다음 필터로 넘김
         if (accessToken == null) {
-
-            filterChain.doFilter(request, response);
-
-            return;
+            return chain.filter(exchange);
         }
 
         // 토큰 만료 여부 확인, 만료시 다음 필터로 넘기지 않음
         try {
-            jwtUtil.isExpired(accessToken);
+            if (jwtUtil.isExpired(accessToken)) {
+                return unauthorized(exchange, "access token expired");
+            }
         } catch (ExpiredJwtException e) {
-
-            //response body
-            PrintWriter writer = response.getWriter();
-            writer.print("access token expired");
-
-            //response status code
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+            return unauthorized(exchange, "access token expired");
         }
 
         // 토큰이 access인지 확인 (발급시 페이로드에 명시)
         String category = jwtUtil.getCategory(accessToken);
 
-        if (!category.equals("access")) {
-
-            //response body
-            PrintWriter writer = response.getWriter();
-            writer.print("invalid access token");
-
-            //response status code
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+        if (!"access".equals(category)) {
+            return unauthorized(exchange, "invalid access token");
         }
 
         // userID, role 값을 획득
@@ -78,8 +63,17 @@ public class JWTFilter extends OncePerRequestFilter {
         CustomUserDetails customUserDetails = new CustomUserDetails(user);
 
         Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(authToken);
 
-        filterChain.doFilter(request, response);
+        return chain.filter(exchange)
+                .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authToken));
+    }
+
+    private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
+        var response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().setContentType(MediaType.TEXT_PLAIN);
+
+        var buffer = response.bufferFactory().wrap(message.getBytes(StandardCharsets.UTF_8));
+        return response.writeWith(Mono.just(buffer));
     }
 }

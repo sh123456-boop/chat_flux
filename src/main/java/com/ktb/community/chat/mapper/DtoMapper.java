@@ -3,7 +3,6 @@ package com.ktb.community.chat.mapper;
 import com.ktb.community.chat.dto.ChatMessageDto;
 import com.ktb.community.chat.dto.ChatMessagePubSubDto;
 import com.ktb.community.chat.dto.ChatMessageReqDto;
-import com.ktb.community.chat.repository.ChatMessageRepository;
 import com.ktb.community.entity.User;
 import com.ktb.community.exception.BusinessException;
 import com.ktb.community.exception.ErrorCode;

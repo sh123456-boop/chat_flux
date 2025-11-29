@@ -4,61 +4,49 @@ import com.ktb.community.chat.service.RedisPubSubService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.listener.PatternTopic;
-import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.ReactiveRedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        // Key 직렬화는 String 으로 설정
-        template.setKeySerializer(new StringRedisSerializer());
-
-
-        // Value 직렬화는 Jackson2JsonRedisSerializer를 사용
-        // DTO 객체를 JSON 형태로 저장하고, 읽어볼 때 다시 DTO 객체로 변환
+    public ReactiveRedisTemplate<String, Object> reactiveRedisTemplate(ReactiveRedisConnectionFactory connectionFactory) {
         Jackson2JsonRedisSerializer<Object> jsonSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        template.setValueSerializer(jsonSerializer);
 
-        // Hash key와 value의 직렬화 방식도 설정 (필요 시)
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(jsonSerializer);
+        RedisSerializationContext<String, Object> context = RedisSerializationContext
+                .<String, Object>newSerializationContext(new StringRedisSerializer())
+                .value(jsonSerializer)
+                .hashKey(new StringRedisSerializer())
+                .hashValue(jsonSerializer)
+                .build();
 
-        template.afterPropertiesSet(); // 설정 값 적용
-        return template;
+        return new ReactiveRedisTemplate<>(connectionFactory, context);
     }
 
     // chat publish 객체
     @Bean
     @Qualifier("chatPubSub")
-    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory redisConnectionFactory){
-        return new StringRedisTemplate(redisConnectionFactory);
+    public ReactiveStringRedisTemplate reactiveStringRedisTemplate(ReactiveRedisConnectionFactory redisConnectionFactory){
+        return new ReactiveStringRedisTemplate(redisConnectionFactory);
     }
 
     // subscribe 객체
     @Bean
-    public RedisMessageListenerContainer redisMessageListenerContainer(
-            RedisConnectionFactory redisConnectionFactory,
-            MessageListenerAdapter messageListenerAdapter
+    public ReactiveRedisMessageListenerContainer reactiveRedisMessageListenerContainer(
+            ReactiveRedisConnectionFactory redisConnectionFactory,
+            RedisPubSubService redisPubSubService
     ) {
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(redisConnectionFactory);
-        container.addMessageListener(messageListenerAdapter, new PatternTopic("chat"));
+        ReactiveRedisMessageListenerContainer container = new ReactiveRedisMessageListenerContainer(redisConnectionFactory);
+        container.receive(ChannelTopic.of("chat"))
+                .flatMap(message -> redisPubSubService.handleMessage(message.getMessage()))
+                .subscribe();
         return container;
-    }
-
-    // redis에서 수신된 메시지를 처리하는 객체 생성
-    @Bean
-    public MessageListenerAdapter messageListenerAdapter(RedisPubSubService redisPubSubService) {
-        return new MessageListenerAdapter(redisPubSubService, "onMessage");
     }
 }

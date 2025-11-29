@@ -43,17 +43,4 @@ public class JWTUtil {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getExpiration().before(new Date());
     }
 
-
-    //jwt 토큰 생성
-    public String createJwt(String category,Long userId, String role, Long expiredMs) {
-
-        return Jwts.builder()
-                .claim("category", category)
-                .claim("userId", userId)
-                .claim("role", role)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiredMs))
-                .signWith(secretKey)
-                .compact();
-    }
 }

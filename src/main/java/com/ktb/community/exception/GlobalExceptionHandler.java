@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @RestControllerAdvice
@@ -17,7 +18,7 @@ public class GlobalExceptionHandler {
      * @return ResponseEntity<ErrorResponse>
      */
     @ExceptionHandler(BusinessException.class)
-    protected ResponseEntity<ErrorResponseDto> handleBusinessException(BusinessException e) {
+    protected Mono<ResponseEntity<ErrorResponseDto>> handleBusinessException(BusinessException e) {
         log.warn("handleBusinessException: {}", e.getErrorCode().getMessage(), e);
         ErrorCode errorCode = e.getErrorCode();
         return ErrorResponseDto.toResponseEntity(errorCode);
@@ -30,7 +31,7 @@ public class GlobalExceptionHandler {
      * @return ResponseEntity<ErrorResponse>
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected ResponseEntity<ErrorResponseDto> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    protected Mono<ResponseEntity<ErrorResponseDto>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         log.warn("handleMethodArgumentNotValidException: {}", e.getMessage());
 
         // 1. 발생한 모든 에러 중 첫 번째 에러의 메시지를 가져옵니다.
@@ -39,7 +40,6 @@ public class GlobalExceptionHandler {
         // 2. 해당 메시지를 ErrorResponseDto를 통해 반환합니다.
         // ErrorCode의 기본 메시지 대신, 동적으로 생성된 errorMessage를 사용합니다.
         return ErrorResponseDto.toResponseEntity(ErrorCode.INVALID_INPUT_VALUE, errorMessage);
-
     }
 
     /**
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
      * @return ResponseEntity<ErrorResponse>
      */
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<ErrorResponseDto> handleException(Exception e) {
+    protected Mono<ResponseEntity<ErrorResponseDto>> handleException(Exception e) {
         log.error("unhandledException: {}", e.getMessage(), e);
         return ErrorResponseDto.toResponseEntity(ErrorCode.INTERNAL_SERVER_ERROR);
     }

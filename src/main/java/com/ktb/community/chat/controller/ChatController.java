@@ -6,9 +6,7 @@ import com.ktb.community.chat.dto.ChatRoomPageResponseDto;
 import com.ktb.community.chat.dto.MyChatListResDto;
 import com.ktb.community.chat.service.ChatServiceImpl;
 import com.ktb.community.dto.ApiResponseDto;
-import com.ktb.community.service.UserServiceImpl;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,11 +15,9 @@ import java.util.List;
 @RequestMapping("/v1/chat")
 public class ChatController {
     private final ChatServiceImpl chatService;
-    private final UserServiceImpl userService;
 
-    public ChatController(ChatServiceImpl chatService, UserServiceImpl userService) {
+    public ChatController(ChatServiceImpl chatService) {
         this.chatService = chatService;
-        this.userService = userService;
     }
 
     //    그룹채팅방 개설

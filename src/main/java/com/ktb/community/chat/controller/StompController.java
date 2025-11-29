@@ -43,6 +43,6 @@ public class StompController {
 
         ObjectMapper objectMapper = new ObjectMapper();
         String message = objectMapper.writeValueAsString(chatMessagePubSubDto);
-        pubSubService.publish("chat", message);
+        pubSubService.publish("chat", message).subscribe();
     }
 }

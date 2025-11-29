@@ -3,40 +3,37 @@ package com.ktb.community.chat.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktb.community.chat.dto.ChatMessageDto;
-import com.ktb.community.chat.dto.ChatMessagePubSubDto;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.connection.Message;
-import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @Service
-public class RedisPubSubService implements MessageListener {
+public class RedisPubSubService {
 
-    private final StringRedisTemplate stringRedisTemplate;
+    private final ReactiveStringRedisTemplate stringRedisTemplate;
     private final SimpMessageSendingOperations messageTemplate;
 
-    public RedisPubSubService(@Qualifier("chatPubSub") StringRedisTemplate stringRedisTemplate,
+    public RedisPubSubService(@Qualifier("chatPubSub") ReactiveStringRedisTemplate stringRedisTemplate,
                               SimpMessageSendingOperations messageTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.messageTemplate = messageTemplate;
     }
 
-    public void publish(String channel, String message) {
-        stringRedisTemplate.convertAndSend(channel, message);
+    public Mono<Long> publish(String channel, String message) {
+        return stringRedisTemplate.convertAndSend(channel, message);
     }
 
-    @Override
-//    pattern에는 topic의 이름의 패턴이 담겨있고, 이 패턴을 기반으로 다이나믹한 코딩
-    public void onMessage(Message message, byte[] pattern) {
-        String payload = new String(message.getBody());
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            ChatMessageDto chatMessageDto = objectMapper.readValue(payload, ChatMessageDto.class);
-            messageTemplate.convertAndSend("/v1/chat/topic/"+chatMessageDto.getRoomId(), chatMessageDto);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public Mono<Void> handleMessage(String payload) {
+        return Mono.fromRunnable(() -> {
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                ChatMessageDto chatMessageDto = objectMapper.readValue(payload, ChatMessageDto.class);
+                messageTemplate.convertAndSend("/v1/chat/topic/" + chatMessageDto.getRoomId(), chatMessageDto);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

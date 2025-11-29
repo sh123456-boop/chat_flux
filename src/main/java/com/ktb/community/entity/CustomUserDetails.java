@@ -1,6 +1,5 @@
-package com.ktb.community.service;
+package com.ktb.community.entity;
 
-import com.ktb.community.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

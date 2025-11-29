@@ -2,7 +2,6 @@ package com.ktb.community.chat.repository;
 
 import com.ktb.community.chat.entity.ChatParticipant;
 import com.ktb.community.chat.entity.ChatRoom;
-import com.ktb.community.chat.entity.ReadStatus;
 import com.ktb.community.entity.User;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
