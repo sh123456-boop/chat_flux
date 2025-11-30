@@ -18,8 +18,9 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.springframework.security: TRACE
+    com.ktb.community.chat.config.ChatWebSocketAuthFilter: DEBUG
 
 server:
   port: 8081
 
-spring.profiles.default: dev
+spring.profiles.default: secret

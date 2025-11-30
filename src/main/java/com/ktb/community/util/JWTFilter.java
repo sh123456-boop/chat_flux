@@ -27,6 +27,13 @@ public class JWTFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
+        String path = exchange.getRequest().getURI().getPath();
+
+        // 🔥 WebSocket 연결은 JWT 필터 통과시켜 버린다
+        if (path.startsWith("/v1/chat/connect")) {
+            return chain.filter(exchange);
+        }
+
         // 헤더에서 access키에 담긴 토큰을 꺼냄
         String accessToken = exchange.getRequest().getHeaders().getFirst("access");
 
