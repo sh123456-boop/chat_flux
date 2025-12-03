@@ -1,6 +1,7 @@
 package com.ktb.community.config;
 
 //import com.ktb.community.chat.config.ChatWebSocketAuthFilter;
+import com.ktb.community.chat.config.ChatWebSocketAuthFilter;
 import com.ktb.community.util.JWTFilter;
 import com.ktb.community.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ import java.util.Collections;
 public class SecurityConfig {
 
     private final JWTUtil jwtUtil;
-//    private final ChatWebSocketAuthFilter chatWebSocketAuthFilter;
+    private final ChatWebSocketAuthFilter chatWebSocketAuthFilter;
 
     @Value("${spring.route.front}")
     String front;
@@ -43,7 +44,7 @@ public class SecurityConfig {
                         .pathMatchers("/v1/admin/**").hasRole("ADMIN")
                         .anyExchange().authenticated())
                 // WebSocket 핸드셰이크에서 채팅 권한/토큰 검증
-//                .addFilterBefore(chatWebSocketAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterBefore(chatWebSocketAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 // JWT는 인증 필터보다 먼저 실행되어 토큰을 검증한다
                 .addFilterBefore(new JWTFilter(jwtUtil), SecurityWebFiltersOrder.AUTHENTICATION)
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
@@ -52,7 +53,7 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(front, "http://localhost:8080", "http://127.0.0.1:8000", "http://localhost:8000"));
+        configuration.setAllowedOrigins(Collections.singletonList(front));
         configuration.setAllowedMethods(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);
         configuration.setAllowedHeaders(Collections.singletonList("*"));

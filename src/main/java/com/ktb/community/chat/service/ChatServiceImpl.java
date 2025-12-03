@@ -18,11 +18,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.ktb.community.exception.ErrorCode.*;
@@ -39,18 +41,20 @@ public class ChatServiceImpl implements ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
+    private final TransactionTemplate transactionTemplate;
 
-    public ChatServiceImpl(ChatRoomRepository chatRoomRepository, ChatParticipantRepository chatParticipantRepository, ChatMessageRepository chatMessageRepository, ReadStatusRepository readStatusRepository, UserRepository userRepository) {
+    public ChatServiceImpl(ChatRoomRepository chatRoomRepository, ChatParticipantRepository chatParticipantRepository, ChatMessageRepository chatMessageRepository, ReadStatusRepository readStatusRepository, UserRepository userRepository, TransactionTemplate transactionTemplate) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatParticipantRepository = chatParticipantRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.readStatusRepository = readStatusRepository;
         this.userRepository = userRepository;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
     public Mono<Void> saveMessage(Long roomId, ChatMessageReqDto chatMessageReqDto) {
-        return Mono.fromRunnable(() -> {
+        return Mono.fromRunnable(() -> transactionTemplate.executeWithoutResult(status -> {
             // 채팅방 조회
             ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new BusinessException(ROOM_NOT_FOUND));
 
@@ -76,7 +80,7 @@ public class ChatServiceImpl implements ChatService {
                         .build();
                 readStatusRepository.save(readStatus);
             }
-        }).subscribeOn(boundedElastic()).then();
+        })).subscribeOn(boundedElastic()).then();
     }
 
     @Override
@@ -162,7 +166,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public Mono<List<ChatMessageDto>> getChatHistory(Long roomId, Long userId) {
-        return Mono.fromCallable(() -> {
+        return Mono.fromCallable(() -> transactionTemplate.execute(status -> {
             // 해당 채팅방의 참여자가 아닐 경우 에러 반환
             ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new BusinessException(ROOM_NOT_FOUND));
             User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(MEMBER_NOT_FOUND));
@@ -173,7 +177,7 @@ public class ChatServiceImpl implements ChatService {
             // 특정 room에 대한 메시지 조회
             List<ChatMessage> chatMessages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(chatRoom);
             List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
-            for(ChatMessage c : chatMessages){
+            for (ChatMessage c : chatMessages) {
                 ChatMessageDto chatMessageDto = ChatMessageDto.builder()
                         .message(c.getContents())
                         .nickName(c.getUser().getNickname())
@@ -183,7 +187,8 @@ public class ChatServiceImpl implements ChatService {
                 chatMessageDtos.add(chatMessageDto);
             }
             return chatMessageDtos;
-        }).subscribeOn(boundedElastic());
+        })).map(Objects::requireNonNull)
+                .subscribeOn(boundedElastic());
     }
 
     @Override
@@ -203,22 +208,22 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public Mono<Void> messageRead(Long roomId, Long userId) {
-        return Mono.fromRunnable(() -> {
+        return Mono.fromRunnable(() -> transactionTemplate.executeWithoutResult(status -> {
             // 채팅방 조회
             ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new BusinessException(ROOM_NOT_FOUND));
             // 유저 조회
             User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(MEMBER_NOT_FOUND));
             // 읽음 처리
             List<ReadStatus> readStatuses = readStatusRepository.findByChatRoomAndUser(chatRoom, user);
-            for(ReadStatus r : readStatuses){
+            for (ReadStatus r : readStatuses) {
                 r.updateIsRead(true);
             }
-        }).subscribeOn(boundedElastic()).then();
+        })).subscribeOn(boundedElastic()).then();
     }
 
     @Override
     public Mono<List<MyChatListResDto>> getMyChatRooms(Long userId) {
-        return Mono.fromCallable(() -> {
+        return Mono.fromCallable(() -> transactionTemplate.execute(status -> {
             User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(MEMBER_NOT_FOUND));
             List<ChatParticipant> chatParticipants = chatParticipantRepository.findAllByUser(user);
             List<MyChatListResDto> dtos = new ArrayList<>();
@@ -233,7 +238,8 @@ public class ChatServiceImpl implements ChatService {
                 dtos.add(dto);
             }
             return dtos;
-        }).subscribeOn(boundedElastic());
+        })).map(Objects::requireNonNull)
+                .subscribeOn(boundedElastic());
     }
 
     @Override

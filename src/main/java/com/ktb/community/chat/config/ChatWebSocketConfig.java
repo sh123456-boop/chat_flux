@@ -39,11 +39,7 @@ public class ChatWebSocketConfig {
 
         // ✅ /v1/chat/connect 에 대한 CORS 설정
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of(
-                front,                      // application.yml 에서 읽어온 프론트 주소
-                "http://localhost:8080",
-                "http://127.0.0.1:8000"
-        ));
+        cors.setAllowedOrigins(List.of(front));
         cors.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         cors.setAllowedHeaders(List.of("*"));
         cors.setAllowCredentials(true);

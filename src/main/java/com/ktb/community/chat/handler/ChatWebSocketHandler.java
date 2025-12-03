@@ -53,7 +53,8 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 .doFinally(signalType -> sessionRegistry.removeSession(session.getId()))
                 .then();
 
-        // 병행 처리
+
+        // WebSocket 연결 종료 시점을 정의하는 코드
         return Mono.firstWithSignal(outbound, inbound);
     }
 
