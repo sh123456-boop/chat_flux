@@ -1,15 +1,12 @@
 package com.ktb.community.llm.service;
 
+
 import com.ktb.community.chat.entity.ChatMessage;
 import com.ktb.community.chat.entity.ChatRoom;
 import com.ktb.community.chat.repository.ChatMessageRepository;
 import com.ktb.community.chat.repository.ChatRoomRepository;
 import com.ktb.community.exception.BusinessException;
-import com.ktb.community.llm.dto.GeminiContentDto;
-import com.ktb.community.llm.dto.GeminiGenerateContentRequestDto;
-import com.ktb.community.llm.dto.GeminiGenerateContentResponseDto;
-import com.ktb.community.llm.dto.GeminiPartDto;
-import com.ktb.community.llm.dto.UserLlmChatResponseDto;
+import com.ktb.community.llm.dto.*;
 import com.ktb.community.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,19 +15,16 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
+import static com.ktb.community.exception.ErrorCode.INTERNAL_SERVER_ERROR;
 import static com.ktb.community.exception.ErrorCode.MEMBER_NOT_FOUND;
 import static com.ktb.community.exception.ErrorCode.ROOM_NOT_FOUND;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 @Service
 @RequiredArgsConstructor
-public class LlmService {
+public class LightLlmService {
 
     private final WebClient webClient;
     private final ChatMessageRepository chatMessageRepository;
@@ -53,23 +47,25 @@ public class LlmService {
     }
 
     private List<String> fetchFormattedMessages(Long roomId) {
-        return Objects.requireNonNull(transactionTemplate.execute(status -> {
-            ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new BusinessException(ROOM_NOT_FOUND));
-            List<ChatMessage> recentMessages = chatMessageRepository.findTop10ByChatRoomOrderByCreatedAtDesc(chatRoom);
-            Collections.reverse(recentMessages); // 가장 오래된 것부터 정렬
-            return recentMessages.stream()
-                    .map(this::formatMessageWithSender)
-                    .toList();
-        }));
+        return Optional.ofNullable(transactionTemplate.execute(status -> {
+                    ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                            .orElseThrow(() -> new BusinessException(ROOM_NOT_FOUND));
+                    List<ChatMessage> recentMessages = chatMessageRepository.findTop10ByChatRoomOrderByCreatedAtDesc(chatRoom);
+                    Collections.reverse(recentMessages); // 가장 오래된 것부터 정렬
+                    return recentMessages.stream()
+                            .map(this::formatMessageWithSender)
+                            .toList();
+                }))
+                .orElseThrow(() -> new BusinessException(INTERNAL_SERVER_ERROR));
     }
 
     private String fetchUserNickname(Long userId) {
-        return Objects.requireNonNull(transactionTemplate.execute(status ->
-                userRepository.findById(userId)
-                        .map(user -> Optional.ofNullable(user.getNickname()).orElse("알 수 없는 사용자"))
-                        .orElseThrow(() -> new BusinessException(MEMBER_NOT_FOUND))
-        ));
+        return Optional.ofNullable(transactionTemplate.execute(status ->
+                        userRepository.findById(userId)
+                                .map(user -> Optional.ofNullable(user.getNickname()).orElse("알 수 없는 사용자"))
+                                .orElseThrow(() -> new BusinessException(MEMBER_NOT_FOUND))
+                ))
+                .orElseThrow(() -> new BusinessException(INTERNAL_SERVER_ERROR));
     }
 
     private GeminiGenerateContentRequestDto buildGeminiRequest(List<String> messages, String requesterNickname) {
