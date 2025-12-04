@@ -1,39 +1,54 @@
 USE board;
 
--- MySQL 8 does not allow WITH + INSERT. Use derived tables for numbers/targets.
-INSERT INTO comments (contents, post_id, user_id, created_at, updated_at)
-SELECT CONCAT(t.title, ' comment ', LPAD(nums.n, 2, '0')),
-       (SELECT post_id FROM posts WHERE title = t.title),
-       CASE MOD(nums.n + t.author_shift, 5)
-           WHEN 1 THEN (SELECT user_id FROM users WHERE email = 'loadtest1@example.com')
-           WHEN 2 THEN (SELECT user_id FROM users WHERE email = 'loadtest2@example.com')
-           WHEN 3 THEN (SELECT user_id FROM users WHERE email = 'loadtest3@example.com')
-           WHEN 4 THEN (SELECT user_id FROM users WHERE email = 'loadtest4@example.com')
-           ELSE (SELECT user_id FROM users WHERE email = 'loadtest-admin@example.com')
-       END,
-       DATE_SUB(NOW(), INTERVAL (t.time_base - nums.n) MINUTE),
-       DATE_SUB(NOW(), INTERVAL (t.time_base - nums.n) MINUTE)
-FROM (
-    SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL
-    SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL
-    SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL
-    SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15 UNION ALL SELECT 16 UNION ALL
-    SELECT 17 UNION ALL SELECT 18
-) nums
-JOIN (
-    SELECT 'Load Test Post 01' AS title, 18 AS cnt, 40 AS time_base, 0 AS author_shift UNION ALL
-    SELECT 'Load Test Post 02', 15, 50, 1 UNION ALL
-    SELECT 'Load Test Post 03', 12, 60, 2 UNION ALL
-    SELECT 'Load Test Post 04',  9, 70, 3 UNION ALL
-    SELECT 'Load Test Post 05', 16, 80, 4 UNION ALL
-    SELECT 'Load Test Post 06',  8, 90, 0 UNION ALL
-    SELECT 'Load Test Post 07',  7, 95, 1 UNION ALL
-    SELECT 'Load Test Post 08',  5,100, 2 UNION ALL
-    SELECT 'Load Test Post 09',  4,105, 3 UNION ALL
-    SELECT 'Load Test Post 10',  4,110, 4 UNION ALL
-    SELECT 'Load Test Post 11',  3,115, 0 UNION ALL
-    SELECT 'Load Test Post 12',  3,120, 1 UNION ALL
-    SELECT 'Load Test Post 13',  2,125, 2 UNION ALL
-    SELECT 'Load Test Post 14',  2,130, 3 UNION ALL
-    SELECT 'Load Test Post 15',  2,135, 4
-) t ON nums.n <= t.cnt;
+INSERT INTO comments (contents, post_id, user_id, created_at, updated_at) VALUES
+('돗자리 어디서 구매하셨어요? 깔끔해 보이네요.', (SELECT post_id FROM posts WHERE title = '주말 한강 피크닉 후기'), (SELECT user_id FROM users WHERE email = 'loadtest2@example.com'), DATE_SUB(NOW(), INTERVAL 180 MINUTE), DATE_SUB(NOW(), INTERVAL 180 MINUTE)),
+('바람 많이 불면 라면에 김치 챙겨가면 최고입니다.', (SELECT post_id FROM posts WHERE title = '주말 한강 피크닉 후기'), (SELECT user_id FROM users WHERE email = 'loadtest3@example.com'), DATE_SUB(NOW(), INTERVAL 170 MINUTE), DATE_SUB(NOW(), INTERVAL 170 MINUTE)),
+('노을 사진 나중에 공유 부탁드립니다!', (SELECT post_id FROM posts WHERE title = '주말 한강 피크닉 후기'), (SELECT user_id FROM users WHERE email = 'loadtest-admin@example.com'), DATE_SUB(NOW(), INTERVAL 165 MINUTE), DATE_SUB(NOW(), INTERVAL 165 MINUTE)),
+('모기 아직 없죠? 아이 데려가도 괜찮을까요?', (SELECT post_id FROM posts WHERE title = '주말 한강 피크닉 후기'), (SELECT user_id FROM users WHERE email = 'loadtest7@example.com'), DATE_SUB(NOW(), INTERVAL 155 MINUTE), DATE_SUB(NOW(), INTERVAL 155 MINUTE)),
+('밤에는 윈드브레이커 하나 가져가면 좋아요.', (SELECT post_id FROM posts WHERE title = '주말 한강 피크닉 후기'), (SELECT user_id FROM users WHERE email = 'loadtest8@example.com'), DATE_SUB(NOW(), INTERVAL 150 MINUTE), DATE_SUB(NOW(), INTERVAL 150 MINUTE)),
+('에그타르트가 인기더라고요. 오전에 가면 금방 나옵니다.', (SELECT post_id FROM posts WHERE title = '새로 문 연 동네 빵집 가보신 분?'), (SELECT user_id FROM users WHERE email = 'loadtest1@example.com'), DATE_SUB(NOW(), INTERVAL 140 MINUTE), DATE_SUB(NOW(), INTERVAL 140 MINUTE)),
+('식빵 예약 가능하대요. 전화 한번 해보세요.', (SELECT post_id FROM posts WHERE title = '새로 문 연 동네 빵집 가보신 분?'), (SELECT user_id FROM users WHERE email = 'loadtest4@example.com'), DATE_SUB(NOW(), INTERVAL 135 MINUTE), DATE_SUB(NOW(), INTERVAL 135 MINUTE)),
+('아메리카노 리필 되는지 궁금했는데 친절하시더라고요.', (SELECT post_id FROM posts WHERE title = '새로 문 연 동네 빵집 가보신 분?'), (SELECT user_id FROM users WHERE email = 'loadtest6@example.com'), DATE_SUB(NOW(), INTERVAL 128 MINUTE), DATE_SUB(NOW(), INTERVAL 128 MINUTE)),
+('베이글이랑 크림치즈 조합 추천합니다!', (SELECT post_id FROM posts WHERE title = '새로 문 연 동네 빵집 가보신 분?'), (SELECT user_id FROM users WHERE email = 'loadtest8@example.com'), DATE_SUB(NOW(), INTERVAL 122 MINUTE), DATE_SUB(NOW(), INTERVAL 122 MINUTE)),
+('1TB로 바꾸면 넉넉해요. 캐시 때문에라도 여유 있게 가세요.', (SELECT post_id FROM posts WHERE title = '중고 노트북 업그레이드 상담'), (SELECT user_id FROM users WHERE email = 'loadtest2@example.com'), DATE_SUB(NOW(), INTERVAL 118 MINUTE), DATE_SUB(NOW(), INTERVAL 118 MINUTE)),
+('SSD 갈아끼우면 체감 확실합니다. 나사 규격만 확인하세요.', (SELECT post_id FROM posts WHERE title = '중고 노트북 업그레이드 상담'), (SELECT user_id FROM users WHERE email = 'loadtest7@example.com'), DATE_SUB(NOW(), INTERVAL 112 MINUTE), DATE_SUB(NOW(), INTERVAL 112 MINUTE)),
+('메모리 슬롯 여유 있으면 듀얼로 맞추세요.', (SELECT post_id FROM posts WHERE title = '중고 노트북 업그레이드 상담'), (SELECT user_id FROM users WHERE email = 'loadtest5@example.com'), DATE_SUB(NOW(), INTERVAL 108 MINUTE), DATE_SUB(NOW(), INTERVAL 108 MINUTE)),
+('5km 페이스 얼마나 나오셨나요? 같이 뛰어보고 싶네요.', (SELECT post_id FROM posts WHERE title = '퇴근 후 러닝 모임 합류 후기'), (SELECT user_id FROM users WHERE email = 'loadtest1@example.com'), DATE_SUB(NOW(), INTERVAL 105 MINUTE), DATE_SUB(NOW(), INTERVAL 105 MINUTE)),
+('코스 미끄럽지 않았나요? 요즘 아침에 비 왔어요.', (SELECT post_id FROM posts WHERE title = '퇴근 후 러닝 모임 합류 후기'), (SELECT user_id FROM users WHERE email = 'loadtest3@example.com'), DATE_SUB(NOW(), INTERVAL 99 MINUTE), DATE_SUB(NOW(), INTERVAL 99 MINUTE)),
+('모임 시간 어디서 확인할 수 있나요?', (SELECT post_id FROM posts WHERE title = '퇴근 후 러닝 모임 합류 후기'), (SELECT user_id FROM users WHERE email = 'loadtest4@example.com'), DATE_SUB(NOW(), INTERVAL 92 MINUTE), DATE_SUB(NOW(), INTERVAL 92 MINUTE)),
+('다음 주 일정 공유 부탁드립니다!', (SELECT post_id FROM posts WHERE title = '퇴근 후 러닝 모임 합류 후기'), (SELECT user_id FROM users WHERE email = 'loadtest9@example.com'), DATE_SUB(NOW(), INTERVAL 88 MINUTE), DATE_SUB(NOW(), INTERVAL 88 MINUTE)),
+('칼슘 부족일 수도 있어요. 잎 뒤 확인해보세요.', (SELECT post_id FROM posts WHERE title = '베란다 텃밭에서 토마토가 잘 안 자라요'), (SELECT user_id FROM users WHERE email = 'loadtest2@example.com'), DATE_SUB(NOW(), INTERVAL 84 MINUTE), DATE_SUB(NOW(), INTERVAL 84 MINUTE)),
+('물 주는 간격 조금 더 줄여보세요. 통풍도 중요해요.', (SELECT post_id FROM posts WHERE title = '베란다 텃밭에서 토마토가 잘 안 자라요'), (SELECT user_id FROM users WHERE email = 'loadtest5@example.com'), DATE_SUB(NOW(), INTERVAL 78 MINUTE), DATE_SUB(NOW(), INTERVAL 78 MINUTE)),
+('화분 크기 작으면 분갈이 추천드립니다.', (SELECT post_id FROM posts WHERE title = '베란다 텃밭에서 토마토가 잘 안 자라요'), (SELECT user_id FROM users WHERE email = 'loadtest1@example.com'), DATE_SUB(NOW(), INTERVAL 74 MINUTE), DATE_SUB(NOW(), INTERVAL 74 MINUTE)),
+('타이니 하우스 다큐 재밌게 봤어요. 시간도 짧아요.', (SELECT post_id FROM posts WHERE title = '넷플릭스 다큐 추천 좀 해주세요'), (SELECT user_id FROM users WHERE email = 'loadtest4@example.com'), DATE_SUB(NOW(), INTERVAL 70 MINUTE), DATE_SUB(NOW(), INTERVAL 70 MINUTE)),
+('네이처 시리즈 새 시즌 나왔는데 영상미가 미쳤습니다.', (SELECT post_id FROM posts WHERE title = '넷플릭스 다큐 추천 좀 해주세요'), (SELECT user_id FROM users WHERE email = 'loadtest3@example.com'), DATE_SUB(NOW(), INTERVAL 66 MINUTE), DATE_SUB(NOW(), INTERVAL 66 MINUTE)),
+('범죄 다큐는 밤에 보면 잠이 안 오더라고요 ㅎㅎ', (SELECT post_id FROM posts WHERE title = '넷플릭스 다큐 추천 좀 해주세요'), (SELECT user_id FROM users WHERE email = 'loadtest6@example.com'), DATE_SUB(NOW(), INTERVAL 62 MINUTE), DATE_SUB(NOW(), INTERVAL 62 MINUTE)),
+('타프만 있어도 비 안 오면 충분합니다.', (SELECT post_id FROM posts WHERE title = '캠핑 입문 장비 리스트 공유'), (SELECT user_id FROM users WHERE email = 'loadtest7@example.com'), DATE_SUB(NOW(), INTERVAL 60 MINUTE), DATE_SUB(NOW(), INTERVAL 60 MINUTE)),
+('버너 가스는 예비로 하나 더 챙기세요.', (SELECT post_id FROM posts WHERE title = '캠핑 입문 장비 리스트 공유'), (SELECT user_id FROM users WHERE email = 'loadtest2@example.com'), DATE_SUB(NOW(), INTERVAL 56 MINUTE), DATE_SUB(NOW(), INTERVAL 56 MINUTE)),
+('헤드랜턴 필수입니다. 랜턴 하나는 부족해요.', (SELECT post_id FROM posts WHERE title = '캠핑 입문 장비 리스트 공유'), (SELECT user_id FROM users WHERE email = 'loadtest9@example.com'), DATE_SUB(NOW(), INTERVAL 52 MINUTE), DATE_SUB(NOW(), INTERVAL 52 MINUTE)),
+('웨건 대여 가능하면 짐 옮기기 편해요.', (SELECT post_id FROM posts WHERE title = '캠핑 입문 장비 리스트 공유'), (SELECT user_id FROM users WHERE email = 'loadtest5@example.com'), DATE_SUB(NOW(), INTERVAL 48 MINUTE), DATE_SUB(NOW(), INTERVAL 48 MINUTE)),
+('간식 주는 시간 일정하게 맞춰보세요.', (SELECT post_id FROM posts WHERE title = '고양이가 밤에 울어요 이유 있을까요?'), (SELECT user_id FROM users WHERE email = 'loadtest1@example.com'), DATE_SUB(NOW(), INTERVAL 45 MINUTE), DATE_SUB(NOW(), INTERVAL 45 MINUTE)),
+('자다가도 문 살짝 열어두면 덜 울더라고요.', (SELECT post_id FROM posts WHERE title = '고양이가 밤에 울어요 이유 있을까요?'), (SELECT user_id FROM users WHERE email = 'loadtest3@example.com'), DATE_SUB(NOW(), INTERVAL 42 MINUTE), DATE_SUB(NOW(), INTERVAL 42 MINUTE)),
+('낮에 활동량 늘려주면 효과 있어요.', (SELECT post_id FROM posts WHERE title = '고양이가 밤에 울어요 이유 있을까요?'), (SELECT user_id FROM users WHERE email = 'loadtest8@example.com'), DATE_SUB(NOW(), INTERVAL 39 MINUTE), DATE_SUB(NOW(), INTERVAL 39 MINUTE)),
+('한 번 건강검진 받아보는 것도 좋겠어요.', (SELECT post_id FROM posts WHERE title = '고양이가 밤에 울어요 이유 있을까요?'), (SELECT user_id FROM users WHERE email = 'loadtest-admin@example.com'), DATE_SUB(NOW(), INTERVAL 36 MINUTE), DATE_SUB(NOW(), INTERVAL 36 MINUTE)),
+('닭가슴살 스테이크 추천합니다. 포만감 좋아요.', (SELECT post_id FROM posts WHERE title = '회사 점심 도시락 메뉴 고민'), (SELECT user_id FROM users WHERE email = 'loadtest6@example.com'), DATE_SUB(NOW(), INTERVAL 34 MINUTE), DATE_SUB(NOW(), INTERVAL 34 MINUTE)),
+('전자레인지용 유리용기 쓰면 냄새 덜 배요.', (SELECT post_id FROM posts WHERE title = '회사 점심 도시락 메뉴 고민'), (SELECT user_id FROM users WHERE email = 'loadtest4@example.com'), DATE_SUB(NOW(), INTERVAL 31 MINUTE), DATE_SUB(NOW(), INTERVAL 31 MINUTE)),
+('잡곡밥 도시락 여러 개 만들어서 냉동하면 편해요.', (SELECT post_id FROM posts WHERE title = '회사 점심 도시락 메뉴 고민'), (SELECT user_id FROM users WHERE email = 'loadtest1@example.com'), DATE_SUB(NOW(), INTERVAL 29 MINUTE), DATE_SUB(NOW(), INTERVAL 29 MINUTE)),
+('RAW로 찍으셨나요? 후보정 여지 많을 거예요.', (SELECT post_id FROM posts WHERE title = '사진 동호회 첫 출사 다녀왔어요'), (SELECT user_id FROM users WHERE email = 'loadtest3@example.com'), DATE_SUB(NOW(), INTERVAL 27 MINUTE), DATE_SUB(NOW(), INTERVAL 27 MINUTE)),
+('화이트밸런스 5200K 정도로 맞춰보세요.', (SELECT post_id FROM posts WHERE title = '사진 동호회 첫 출사 다녀왔어요'), (SELECT user_id FROM users WHERE email = 'loadtest8@example.com'), DATE_SUB(NOW(), INTERVAL 25 MINUTE), DATE_SUB(NOW(), INTERVAL 25 MINUTE)),
+('LR에서 대비 조금만 올려도 색감 살아나요.', (SELECT post_id FROM posts WHERE title = '사진 동호회 첫 출사 다녀왔어요'), (SELECT user_id FROM users WHERE email = 'loadtest2@example.com'), DATE_SUB(NOW(), INTERVAL 22 MINUTE), DATE_SUB(NOW(), INTERVAL 22 MINUTE)),
+('노이즈는 로컬로 살살 지우면 자연스럽습니다.', (SELECT post_id FROM posts WHERE title = '사진 동호회 첫 출사 다녀왔어요'), (SELECT user_id FROM users WHERE email = 'loadtest6@example.com'), DATE_SUB(NOW(), INTERVAL 20 MINUTE), DATE_SUB(NOW(), INTERVAL 20 MINUTE)),
+('우유 대신 생크림 조금 넣으면 더 꾸덕해요.', (SELECT post_id FROM posts WHERE title = '집에서 해먹는 크림 파스타 레시피'), (SELECT user_id FROM users WHERE email = 'loadtest2@example.com'), DATE_SUB(NOW(), INTERVAL 19 MINUTE), DATE_SUB(NOW(), INTERVAL 19 MINUTE)),
+('베이컨 기름에 밀가루 살짝 볶아보세요.', (SELECT post_id FROM posts WHERE title = '집에서 해먹는 크림 파스타 레시피'), (SELECT user_id FROM users WHERE email = 'loadtest9@example.com'), DATE_SUB(NOW(), INTERVAL 17 MINUTE), DATE_SUB(NOW(), INTERVAL 17 MINUTE)),
+('치즈 한 스푼 넣으면 농도 바로 잡힙니다.', (SELECT post_id FROM posts WHERE title = '집에서 해먹는 크림 파스타 레시피'), (SELECT user_id FROM users WHERE email = 'loadtest5@example.com'), DATE_SUB(NOW(), INTERVAL 15 MINUTE), DATE_SUB(NOW(), INTERVAL 15 MINUTE)),
+('허먼밀러 쓰는데 허리 편해서 만족합니다.', (SELECT post_id FROM posts WHERE title = '미니멀 데스크 셋업 정리'), (SELECT user_id FROM users WHERE email = 'loadtest4@example.com'), DATE_SUB(NOW(), INTERVAL 14 MINUTE), DATE_SUB(NOW(), INTERVAL 14 MINUTE)),
+('방향 조명 하나 있으면 분위기 더 좋아져요.', (SELECT post_id FROM posts WHERE title = '미니멀 데스크 셋업 정리'), (SELECT user_id FROM users WHERE email = 'loadtest1@example.com'), DATE_SUB(NOW(), INTERVAL 12 MINUTE), DATE_SUB(NOW(), INTERVAL 12 MINUTE)),
+('케이블 트레이 설치하면 발밑 깔끔합니다.', (SELECT post_id FROM posts WHERE title = '미니멀 데스크 셋업 정리'), (SELECT user_id FROM users WHERE email = 'loadtest7@example.com'), DATE_SUB(NOW(), INTERVAL 10 MINUTE), DATE_SUB(NOW(), INTERVAL 10 MINUTE)),
+('검정치마 03 추천드려요. 비올 때 딱입니다.', (SELECT post_id FROM posts WHERE title = '비 오는 날 듣기 좋은 노래 리스트'), (SELECT user_id FROM users WHERE email = 'loadtest8@example.com'), DATE_SUB(NOW(), INTERVAL 9 MINUTE), DATE_SUB(NOW(), INTERVAL 9 MINUTE)),
+('잔나비 비가 오는 날엔 요즘 계속 듣고 있어요.', (SELECT post_id FROM posts WHERE title = '비 오는 날 듣기 좋은 노래 리스트'), (SELECT user_id FROM users WHERE email = 'loadtest3@example.com'), DATE_SUB(NOW(), INTERVAL 8 MINUTE), DATE_SUB(NOW(), INTERVAL 8 MINUTE)),
+('브루노 메이저 노래도 추가해보세요.', (SELECT post_id FROM posts WHERE title = '비 오는 날 듣기 좋은 노래 리스트'), (SELECT user_id FROM users WHERE email = 'loadtest2@example.com'), DATE_SUB(NOW(), INTERVAL 7 MINUTE), DATE_SUB(NOW(), INTERVAL 7 MINUTE)),
+('기장쪽 주차 널널해서 편했습니다.', (SELECT post_id FROM posts WHERE title = '부산 여행 코스 초안 피드백'), (SELECT user_id FROM users WHERE email = 'loadtest6@example.com'), DATE_SUB(NOW(), INTERVAL 6 MINUTE), DATE_SUB(NOW(), INTERVAL 6 MINUTE)),
+('용궁사 들렀다가 죽성성당도 가까워요.', (SELECT post_id FROM posts WHERE title = '부산 여행 코스 초안 피드백'), (SELECT user_id FROM users WHERE email = 'loadtest1@example.com'), DATE_SUB(NOW(), INTERVAL 5 MINUTE), DATE_SUB(NOW(), INTERVAL 5 MINUTE)),
+('회는 민락수변공원 쪽이 선택지 많습니다.', (SELECT post_id FROM posts WHERE title = '부산 여행 코스 초안 피드백'), (SELECT user_id FROM users WHERE email = 'loadtest-admin@example.com'), DATE_SUB(NOW(), INTERVAL 4 MINUTE), DATE_SUB(NOW(), INTERVAL 4 MINUTE)),
+('스트레칭 루틴 공유 가능할까요? 따라 해보고 싶어요.', (SELECT post_id FROM posts WHERE title = '아침 루틴을 좀 바꿔봤습니다'), (SELECT user_id FROM users WHERE email = 'loadtest8@example.com'), DATE_SUB(NOW(), INTERVAL 3 MINUTE), DATE_SUB(NOW(), INTERVAL 3 MINUTE)),
+('아침에 물 충분히 마시면 더 효과 좋아요.', (SELECT post_id FROM posts WHERE title = '아침 루틴을 좀 바꿔봤습니다'), (SELECT user_id FROM users WHERE email = 'loadtest3@example.com'), DATE_SUB(NOW(), INTERVAL 2 MINUTE), DATE_SUB(NOW(), INTERVAL 2 MINUTE));

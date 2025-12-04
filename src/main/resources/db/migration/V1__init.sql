@@ -8,7 +8,7 @@ CREATE TABLE users (
   `user_id` BIGINT NOT NULL AUTO_INCREMENT primary key,
   `email`    VARCHAR(254) NOT NULL,
   `password` VARCHAR(255) NOT NULL,
-  `nickname` VARCHAR(10)  NOT NULL,
+  `nickname` VARCHAR(20)  NOT NULL,
   `role` ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
