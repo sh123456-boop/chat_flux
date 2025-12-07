@@ -71,7 +71,8 @@
 ---
 
 ## 📂 GitHub Repository
-- Chat 서버 GitHub (Spring WebFlux + WebSocket + LLM): https://github.com/sh123456-boop/chat_flux
+- Front-end GitHub : https://github.com/sh123456-boop/3-rian-ha-community-FE
+- Back-end GitHub : https://github.com/sh123456-boop/3-rian-ha-community-BE
 
 ---
 
