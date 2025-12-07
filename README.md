@@ -33,7 +33,7 @@
   - WebFlux + Reactor 기반 논블로킹 I/O 처리
   - WebClient를 활용한 LLM 외부 API 호출의 완전 비동기 처리
   - Redis Pub/Sub과 세션 레지스트리(SessionRegistry)를 활용한 다중 노드 확장 대응
-  - LLM 호출·DB 조회 등 블로킹 가능성이 있는 작업을 별도 Scheduler로 분리하여 Netty 이벤트 루프 보호
+  - DB 조회 등 블로킹 가능성이 있는 작업을 별도 Scheduler로 분리하여 Netty 이벤트 루프 보호
 
 ---
 
