@@ -1,6 +1,6 @@
 # 🎙️ 프로젝트 소개 (Project Overview)
 개인적인 고민과 개발을 주제로 서로 소통하는 커뮤니티 서비스의 **실시간 채팅 전용 Back-end 서버**입니다.  
-기존 Spring MVC + STOMP 서버에서 처리하던 채팅·LLM 기능을, **외부 I/O가 많은 특성(LLM API 호출, Redis, DB 조회 등)** 때문에  
+기존 Spring MVC + STOMP 서버에서 처리하던 채팅 기능을, **외부 I/O가 많은 특성(LLM API 호출, Redis, DB 조회 등)** 때문에  
 **Spring WebFlux + 순수 WebSocket 기반의 별도 서버로 분리**하여 구현한 프로젝트입니다.
 
 ---
