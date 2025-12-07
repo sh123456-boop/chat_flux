@@ -77,4 +77,3 @@
 
 ## 🎥 시연 영상
 - YouTube: https://youtu.be/3V6KJWw1kFE  
-  > 커뮤니티 서비스 내 **실시간 채팅 및 LLM 자동 응답 기능**을 담당하는 서버입니다.
