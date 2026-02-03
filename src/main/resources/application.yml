@@ -23,4 +23,4 @@ logging:
 server:
   port: 8081
 
-spring.profiles.default: secret
+spring.profiles.default: dev

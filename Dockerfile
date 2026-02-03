@@ -29,24 +29,6 @@ WORKDIR /app
 # 빌드된 jar 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# 🔹 이 스테이지에서 빌드 인자 선언 (GitHub Actions의 --build-arg가 여기로 들어옴)
-ARG DB_URL
-ARG DB_USERNAME
-ARG DB_PASSWORD
-ARG REDIS_HOST
-ARG JWT_SECRET
-ARG ROUTE_FRONT
-ARG LLM_KEY
-
-# 🔹 빌드 인자를 이미지 환경 변수로 승격 (컨테이너에서 env 로 보이게)
-ENV DB_URL=${DB_URL} \
-    DB_USERNAME=${DB_USERNAME} \
-    DB_PASSWORD=${DB_PASSWORD} \
-    REDIS_HOST=${REDIS_HOST} \
-    JWT_SECRET=${JWT_SECRET} \
-    ROUTE_FRONT=${ROUTE_FRONT} \
-    LLM_KEY=${LLM_KEY}
-
 # 컨테이너가 열 포트 선언
 EXPOSE 8081
 

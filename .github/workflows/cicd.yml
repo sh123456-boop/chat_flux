@@ -33,32 +33,28 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAGS: ${{ env.IMAGE_TAGS }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          REDIS_HOST: ${{ secrets.REDIS_HOST }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          ROUTE_FRONT: ${{ secrets.ROUTE_FRONT }}
-          LLM_KEY: ${{ secrets.LLM_KEY }}
         run: |
           echo "REGISTRY=$REGISTRY"
           echo "REPOSITORY=$REPOSITORY"
           echo "IMAGE_TAGS=$IMAGE_TAGS"
           
           docker build \
-            --build-arg DB_URL="$DB_URL" \
-            --build-arg DB_USERNAME="$DB_USERNAME" \
-            --build-arg DB_PASSWORD="$DB_PASSWORD" \
-            --build-arg REDIS_HOST="$REDIS_HOST" \
-            --build-arg JWT_SECRET="$JWT_SECRET" \
-            --build-arg ROUTE_FRONT="$ROUTE_FRONT" \
-            --build-arg LLM_KEY="$LLM_KEY" \
             -t $REGISTRY/$REPOSITORY:$IMAGE_TAGS .
           
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAGS
 
+      - name: Restart netty on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            sudo systemctl restart netty
+
 #      - name: Start Instance Refresh for Spring ASG
 #        run: |
 #            aws autoscaling start-instance-refresh \
-#              --auto-scaling-group-name "spring-asg" \
+#              --auto-scaling-group-name "chat-asg" \
 #              --preferences '{"MinHealthyPercentage":0,"SkipMatching":false}'
