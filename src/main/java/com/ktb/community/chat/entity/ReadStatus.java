@@ -1,6 +1,5 @@
 package com.ktb.community.chat.entity;
 
-
 import com.ktb.community.entity.Timestamped;
 import com.ktb.community.entity.User;
 import jakarta.persistence.*;

@@ -1,6 +1,7 @@
 package com.ktb.community.chat.service;
 
 import com.ktb.community.chat.dto.*;
+import com.ktb.community.chat.document.MongoChatMessage;
 import com.ktb.community.chat.entity.ChatMessage;
 import com.ktb.community.chat.entity.ChatParticipant;
 import com.ktb.community.chat.entity.ChatRoom;
@@ -8,6 +9,7 @@ import com.ktb.community.chat.entity.ReadStatus;
 import com.ktb.community.chat.repository.ChatMessageRepository;
 import com.ktb.community.chat.repository.ChatParticipantRepository;
 import com.ktb.community.chat.repository.ChatRoomRepository;
+import com.ktb.community.chat.repository.MongoChatMessageRepository;
 import com.ktb.community.chat.repository.ReadStatusRepository;
 import com.ktb.community.entity.User;
 import com.ktb.community.exception.BusinessException;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 import static com.ktb.community.exception.ErrorCode.*;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
@@ -39,14 +42,22 @@ public class ChatServiceImpl implements ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatParticipantRepository chatParticipantRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final MongoChatMessageRepository mongoChatMessageRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
     private final TransactionTemplate transactionTemplate;
 
-    public ChatServiceImpl(ChatRoomRepository chatRoomRepository, ChatParticipantRepository chatParticipantRepository, ChatMessageRepository chatMessageRepository, ReadStatusRepository readStatusRepository, UserRepository userRepository, TransactionTemplate transactionTemplate) {
+    public ChatServiceImpl(ChatRoomRepository chatRoomRepository,
+                           ChatParticipantRepository chatParticipantRepository,
+                           ChatMessageRepository chatMessageRepository,
+                           MongoChatMessageRepository mongoChatMessageRepository,
+                           ReadStatusRepository readStatusRepository,
+                           UserRepository userRepository,
+                           TransactionTemplate transactionTemplate) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatParticipantRepository = chatParticipantRepository;
         this.chatMessageRepository = chatMessageRepository;
+        this.mongoChatMessageRepository = mongoChatMessageRepository;
         this.readStatusRepository = readStatusRepository;
         this.userRepository = userRepository;
         this.transactionTemplate = transactionTemplate;
@@ -68,6 +79,15 @@ public class ChatServiceImpl implements ChatService {
                     .contents(chatMessageReqDto.getMessage())
                     .build();
             chatMessageRepository.save(chatMessage);
+
+            Instant createdAt = chatMessage.getCreatedAt() != null ? chatMessage.getCreatedAt() : Instant.now();
+            mongoChatMessageRepository.save(MongoChatMessage.builder()
+                    .roomId(chatRoom.getId())
+                    .senderId(sender.getId())
+                    .message(chatMessageReqDto.getMessage())
+                    .nickName(sender.getNickname())
+                    .createdAt(createdAt)
+                    .build());
 
             // 사용자 별로 읽음 여부 저장(보낸사람만 읽음 표시)
             List<ChatParticipant> chatParticipantList = chatRoom.getChatParticipantList();
@@ -174,14 +194,27 @@ public class ChatServiceImpl implements ChatService {
             if (!byChatRoomAndUser.isPresent()) {
                 throw new BusinessException(ACCESS_DENIED);
             }
-            // 특정 room에 대한 메시지 조회
-            List<ChatMessage> chatMessages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(chatRoom);
+            // 기존 MySQL 조회 로직은 참고용으로 남겨둠
+            // List<ChatMessage> chatMessages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(chatRoom);
+            // for (ChatMessage c : chatMessages) {
+            //     ChatMessageDto chatMessageDto = ChatMessageDto.builder()
+            //             .message(c.getContents())
+            //             .nickName(c.getUser().getNickname())
+            //             .senderId(c.getUser().getId())
+            //             .createdAt(c.getCreatedAt())
+            //             .build();
+            //     chatMessageDtos.add(chatMessageDto);
+            // }
+
+            // 특정 room에 대한 메시지 조회 (MongoDB)
+            List<MongoChatMessage> chatMessages = mongoChatMessageRepository.findByRoomIdOrderByCreatedAtAsc(roomId);
             List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
-            for (ChatMessage c : chatMessages) {
+            for (MongoChatMessage c : chatMessages) {
                 ChatMessageDto chatMessageDto = ChatMessageDto.builder()
-                        .message(c.getContents())
-                        .nickName(c.getUser().getNickname())
-                        .senderId(c.getUser().getId())
+                        .roomId(c.getRoomId())
+                        .message(c.getMessage())
+                        .nickName(c.getNickName())
+                        .senderId(c.getSenderId())
                         .createdAt(c.getCreatedAt())
                         .build();
                 chatMessageDtos.add(chatMessageDto);
