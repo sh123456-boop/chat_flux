@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktb.community.chat.dto.ChatMessageReqDto;
 import com.ktb.community.chat.mapper.DtoMapper;
 import com.ktb.community.chat.service.ChatServiceImpl;
+import com.ktb.community.chat.service.KafkaPubSubService;
 import com.ktb.community.chat.service.RedisPubSubService;
 import com.ktb.community.chat.service.SessionRegistry;
 import org.springframework.stereotype.Component;
@@ -21,17 +22,17 @@ import java.util.Map;
 public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final SessionRegistry sessionRegistry;
-    private final RedisPubSubService redisPubSubService;
+    private final KafkaPubSubService kafkaPubSubService;
     private final ChatServiceImpl chatService;
     private final DtoMapper dtoMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ChatWebSocketHandler(SessionRegistry sessionRegistry,
-                                RedisPubSubService redisPubSubService,
+                                KafkaPubSubService kafkaPubSubService,
                                 ChatServiceImpl chatService,
                                 DtoMapper dtoMapper) {
         this.sessionRegistry = sessionRegistry;
-        this.redisPubSubService = redisPubSubService;
+        this.kafkaPubSubService = kafkaPubSubService;
         this.chatService = chatService;
         this.dtoMapper = dtoMapper;
     }
@@ -79,11 +80,12 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                     return Mono.empty();
                 }
 
-                // 메시지 저장 -> pubsub DTO 변환 -> JSON 직렬화 -> Redis publish
+                // 메시지 저장 -> pubsub DTO 변환 -> JSON 직렬화 -> Kafka publish
                 return chatService.saveMessage(req.getRoomId(), req)
                         .then(dtoMapper.toPubSubDto(req))
                         .flatMap(dto -> Mono.fromCallable(() -> objectMapper.writeValueAsString(dto)))
-                        .flatMap(message -> redisPubSubService.publish("chat", message).then());
+//                        .flatMap(message -> redisPubSubService.publish("chat", message).then());
+                        .flatMap(message -> kafkaPubSubService.publish("chat", message).then());
             }
         } catch (Exception e) {
             // ignore malformed payload

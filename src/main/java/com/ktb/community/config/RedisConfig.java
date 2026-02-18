@@ -1,14 +1,11 @@
 package com.ktb.community.config;
 
-import com.ktb.community.chat.service.RedisPubSubService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
-import org.springframework.data.redis.listener.ChannelTopic;
-import org.springframework.data.redis.listener.ReactiveRedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -37,16 +34,16 @@ public class RedisConfig {
         return new ReactiveStringRedisTemplate(redisConnectionFactory);
     }
 
-    // subscribe 객체
-    @Bean
-    public ReactiveRedisMessageListenerContainer reactiveRedisMessageListenerContainer(
-            ReactiveRedisConnectionFactory redisConnectionFactory,
-            RedisPubSubService redisPubSubService
-    ) {
-        ReactiveRedisMessageListenerContainer container = new ReactiveRedisMessageListenerContainer(redisConnectionFactory);
-        container.receive(ChannelTopic.of("chat"))
-                .flatMap(message -> redisPubSubService.handleMessage(message.getMessage()))
-                .subscribe();
-        return container;
-    }
+//    // subscribe 객체
+//    @Bean
+//    public ReactiveRedisMessageListenerContainer reactiveRedisMessageListenerContainer(
+//            ReactiveRedisConnectionFactory redisConnectionFactory,
+//            RedisPubSubService redisPubSubService
+//    ) {
+//        ReactiveRedisMessageListenerContainer container = new ReactiveRedisMessageListenerContainer(redisConnectionFactory);
+//        container.receive(ChannelTopic.of("chat"))
+//                .flatMap(message -> redisPubSubService.handleMessage(message.getMessage()))
+//                .subscribe();
+//        return container;
+//    }
 }
